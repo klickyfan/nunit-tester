@@ -1,4 +1,3 @@
 ﻿to build: dotnet publish -c Debug -r win10-x86
 to execute: .\NUnitTester\bin\Debug\netcoreapp2.2\win10-x86\NUnitTester.exe
-
-sample output:
+sample output: see png file included in the project
