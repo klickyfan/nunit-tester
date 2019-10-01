@@ -6,36 +6,36 @@ namespace NUnitTester
     class FlameTests : Tests
     {
         [Test]
-        [TestCaseSource("Test1TestCaseData")]
-        public void Test1()
+        [TestCaseSource("TestATestCaseData")]
+        public void TestA()
         {
-            TestContext.Progress.WriteLine("In FlameTests:Test1!");
+            TestContext.Progress.WriteLine("In FlameTests:TestA!");
 
             Assert.AreEqual(1, 1);
         }
 
         [Test]
-        [TestCaseSource("Test2TestCaseData")]
-        public void Test2()
+        [TestCaseSource("TestBTestCaseData")]
+        public void TestB(int argument0, string argument1)
         {
-            TestContext.Progress.WriteLine("In FlameTests:Test2!");
+            TestContext.Progress.WriteLine("In FlameTests:TestB!");
 
             // should fail!
             Assert.AreEqual(1, 2);
         }
 
-        private static IEnumerable<TestCaseData> Test1TestCaseData()
+        private static IEnumerable<TestCaseData> TestATestCaseData()
         {
-            yield return new TestCaseData().SetName("Test 1, Case 1");
+            yield return new TestCaseData().SetName("TestA, Case 0");
 
-            yield return new TestCaseData().SetName("Test 1, Case 2");
+            yield return new TestCaseData().SetName("TestA, Case 1");
         }
 
-        private static IEnumerable<TestCaseData> Test2TestCaseData()
+        private static IEnumerable<TestCaseData> TestBTestCaseData()
         {
-            yield return new TestCaseData().SetName("Test 2, Case 1");
+            yield return new TestCaseData(0, "test string 0").SetName("TestB, Case 0");
 
-            yield return new TestCaseData().SetName("Test 2, Case 2");
+            yield return new TestCaseData(1, "test string 1").SetName("TestB, Case 1");
         }
     }
 }

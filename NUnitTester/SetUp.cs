@@ -54,45 +54,67 @@ namespace NUnitTester
         /* This method returns a list of all test cases returned by TestCaseSource methods. */
         private List<string> GetListOfTestCaseSourceTestCases()
         {
+            TestContext.Progress.WriteLine("Entering Setup:GetListOfTestCaseSourceTestCases!");
+
             var implementedTests = new List<string>();
 
             var assembly = Assembly.GetExecutingAssembly();
 
             var allTypes = assembly?.GetTypes();
 
-            var fixture = allTypes.Where(x => x.GetCustomAttributes(typeof(TestFixtureAttribute)).Count() > 0).First();
-
-            var allMethods = allTypes.Where(t => t.BaseType == typeof(Tests)).SelectMany(t => t.GetMethods());
-
-            TestContext.Progress.WriteLine($"found {allMethods.Count()} methods: ");
-
-            foreach (var method in allMethods)
+            foreach (var type in allTypes)
             {
-                TestContext.Progress.WriteLine("method: {0}", method.Name);
+                TestContext.Progress.WriteLine($"type = {type.Name} ({type.FullName}, {type.DeclaringType}, {type.GetCustomAttributes(typeof(TestFixtureAttribute)).Count()})");
+            }
 
-                var sourceAttributes = method.GetCustomAttributes(typeof(TestCaseSourceAttribute)) as IEnumerable<TestCaseSourceAttribute>;
+            var fixtures = allTypes?.Where(x => x.GetCustomAttributes(typeof(TestFixtureAttribute)).Count() > 0);
 
-                foreach (var sourceAttribute in sourceAttributes)
+            foreach (var fixture in fixtures)
+            {
+                TestContext.Progress.WriteLine($"fixture = {fixture.Name}");
+
+                var allMethods = allTypes.SelectMany(t => t.GetMethods().Where(m => m.DeclaringType == fixture));
+
+                TestContext.Progress.WriteLine($"   found {allMethods.Count()} methods: ");
+
+                foreach (var method in allMethods)
                 {
-                    TestContext.Progress.WriteLine(sourceAttribute.SourceName);
+                    TestContext.Progress.WriteLine($"       method = {method.Name}");
 
-                    var sourceName = sourceAttribute.SourceName;
-                    if (!string.IsNullOrEmpty(sourceName))
+                    var sourceAttributes = method.GetCustomAttributes(typeof(TestCaseSourceAttribute)) as IEnumerable<TestCaseSourceAttribute>;
+
+                    foreach (var sourceAttribute in sourceAttributes)
                     {
-                        var source = fixture.GetMethod(sourceName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-
-                        var result = (IEnumerable<TestCaseData>)source.Invoke(null, new object[] { });
-                        foreach (var item in result)
+                        if (!string.IsNullOrEmpty(sourceAttribute.SourceName))
                         {
-                            implementedTests.Add(item.TestName);
+                            var source = fixture.GetMethod(sourceAttribute.SourceName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+
+                            var defaultArgumentValues = source.GetParameters().Select(p => GetDefaultValue(p.ParameterType)).ToArray();
+
+                            var result = (IEnumerable<TestCaseData>)source.Invoke(null, defaultArgumentValues);
+
+                            foreach (var item in result)
+                            {
+                                TestContext.Progress.WriteLine($"         adding {item.TestName}");
+                                implementedTests.Add(item.TestName);
+                            }
+
                         }
                     }
                 }
+
             }
 
-            TestContext.Progress.WriteLine($"implementedTests: {string.Join(", ", implementedTests.ToArray())}");
+            TestContext.Progress.WriteLine($"implementedTests = {string.Join(", ", implementedTests.ToArray())}");
+
+            TestContext.Progress.WriteLine("Exiting Setup:GetListOfTestCaseSourceTestCases!");
 
             return implementedTests;
-        }  
+        }
+
+        private object GetDefaultValue(Type type)
+        {
+            return type.IsValueType ? Activator.CreateInstance(type) : null;
+        }
     }
 }
